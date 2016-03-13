@@ -49,7 +49,6 @@ public class MainActivity extends AppCompatActivity
 
     private String TAG = "no_pressure";
 
-    Button btnOn, btnOff;
     TextView txtArduino, txtString, txtStringLength, sensorView0, sensorView1, sensorView2, sensorView3;
     Handler bluetoothIn;
 
@@ -78,36 +77,11 @@ public class MainActivity extends AppCompatActivity
 
         setContentView(R.layout.activity_main);
 
-        //Link the buttons and textViews to respective views
-        btnOn = (Button) findViewById(R.id.btnOn);
-        btnOff = (Button) findViewById(R.id.btnOff);
-       // txtString = (TextView) findViewById(R.id.txtArduino);
-
-
         bluetoothIn = new BroadcastHandler();
 
         btAdapter = BluetoothAdapter.getDefaultAdapter();       // get Bluetooth adapter
         checkBTState();
 
-        // Set up onClick listeners for buttons to send 1 or 0 to turn on/off LED
-        btnOff.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                mConnectedThread.write("0");    // Send "0" via Bluetooth
-                Toast.makeText(getBaseContext(), "Turn off LED", Toast.LENGTH_SHORT).show();
-            }
-        });
-
-        btnOn.setOnClickListener(new View.OnClickListener() {
-            //Log.e("Shit", "Fcking does this work");
-            @Override
-            public void onClick(View v) {
-                mConnectedThread.write("1");    // Send "1" via Bluetooth
-                Toast.makeText(getBaseContext(), "Turn on LED", Toast.LENGTH_SHORT).show();
-            }
-        });
-
-       // setContentView(R.layout.activity_main);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
@@ -134,7 +108,7 @@ public class MainActivity extends AppCompatActivity
             public void onClick(View view) {
                 showingFront = !showingFront;
                 drawButt();
-                sendButtSMS();
+                //sendButtSMS();
             }
         });
 
@@ -251,8 +225,10 @@ public class MainActivity extends AppCompatActivity
             while (true) {
                 try {
                     bytes = mmInStream.read(buffer);            //read bytes from input buffer
+                    Log.e("Read Message", "Number "+ Integer.toString(bytes) );
                     String readMessage = new String(buffer, 0, bytes);
                     // Send the obtained bytes to the UI Activity via handler
+                    Log.e("Read Message", "something "+readMessage );
                     bluetoothIn.obtainMessage(handlerState, bytes, -1, readMessage).sendToTarget();
                 } catch (IOException e) {
                     break;
@@ -306,7 +282,7 @@ public class MainActivity extends AppCompatActivity
 
     public void sendButtSMS() {
         SmsManager sms = SmsManager.getDefault();
-        sms.sendTextMessage("6043656015", null,
+        sms.sendTextMessage("7788963148", null,
                 "Your patient may need to adjust the pressure on his or her buttocks.", null, null);
     }
 
@@ -375,17 +351,18 @@ public class MainActivity extends AppCompatActivity
 
     public void handleMessage(android.os.Message msg) {
         if (msg.what == handlerState) {                                     //if message is what we want
-            String readMessage = (String) msg.obj;                                                                // msg.arg1 = bytes from connect thread
-            if (!readMessage.contains("0")) {
-                pressure_threshold_count ++;
-            } else {
+            String readMessage = (String) msg.obj;                                                          // msg.arg1 = bytes from connect thread
+            /* If we hear a 1 signal, we need to raise an alert */
+            if (!readMessage.contains("1")) {
                 pressure_threshold_count = 0;
                 Log.e(TAG, "pressure_threshold_count reset " + readMessage);
-            }
-
-            Log.e(TAG, "msg: " + readMessage + " count: " + pressure_threshold_count);
-            if (pressure_threshold_count > PRESSURE_THRESHOLD_MAX)
                 Toast.makeText(getBaseContext(), "ALERT!", Toast.LENGTH_SHORT).show();
+                BUTT_PROBLEM = true;
+                showingFront = false;
+                drawButt();
+                playSound();
+                //sendButtSMS();
+            }
         }
     }
 }
