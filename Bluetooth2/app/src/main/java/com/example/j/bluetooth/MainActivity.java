@@ -43,6 +43,8 @@ import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.ImageView;
+import android.app.NotificationManager;
+import android.content.Context;
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
@@ -140,6 +142,7 @@ public class MainActivity extends AppCompatActivity
 
         //Get the MAC address from the DeviceListActivty via EXTRA
       address = "00:14:01:17:21:34";
+        //makeNotification();
 
         //create device and set the MAC address
         BluetoothDevice device = btAdapter.getRemoteDevice(address);
@@ -243,7 +246,7 @@ public class MainActivity extends AppCompatActivity
             } catch (IOException e) {
                 //if you cannot write, close the application
                 Toast.makeText(getBaseContext(), "Connection Failure", Toast.LENGTH_LONG).show();
-                finish();
+                //finish();
 
             }
         }
@@ -349,21 +352,41 @@ public class MainActivity extends AppCompatActivity
 
     private class BroadcastHandler extends Handler {
 
-    public void handleMessage(android.os.Message msg) {
-        if (msg.what == handlerState) {                                     //if message is what we want
-            String readMessage = (String) msg.obj;                                                          // msg.arg1 = bytes from connect thread
-            /* If we hear a 1 signal, we need to raise an alert */
-            if (!readMessage.contains("1")) {
-                pressure_threshold_count = 0;
-                Log.e(TAG, "pressure_threshold_count reset " + readMessage);
-                Toast.makeText(getBaseContext(), "ALERT!", Toast.LENGTH_SHORT).show();
-                BUTT_PROBLEM = true;
-                showingFront = false;
-                drawButt();
-                playSound();
-                //sendButtSMS();
+        public void handleMessage(android.os.Message msg) {
+            if (msg.what == handlerState) {                                     //if message is what we want
+                String readMessage = (String) msg.obj;                                                          // msg.arg1 = bytes from connect thread
+                /* If we hear a 1 signal, we need to raise an alert */
+                if (!readMessage.contains("1")) {
+                    pressure_threshold_count = 0;
+                    Log.e(TAG, "pressure_threshold_count reset " + readMessage);
+                    Toast.makeText(getBaseContext(), "ALERT!", Toast.LENGTH_SHORT).show();
+                    BUTT_PROBLEM = true;
+                    showingFront = false;
+                    drawButt();
+                    playSound();
+                    makeNotification();
+                    sendButtSMS();
+                }
             }
         }
     }
-}
+
+    private void makeNotification() {
+
+        NotificationCompat.Builder mBuilder =
+    new NotificationCompat.Builder(this)
+    .setSmallIcon(R.drawable.warn)
+    .setContentTitle("Limb Pressure Warning")
+    .setContentText("You may want to adjust your buttocks.");
+
+// Sets an ID for the notification
+        int mNotificationId = 001;
+// Gets an instance of the NotificationManager service
+        NotificationManager mNotifyMgr =
+                (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+// Builds the notification and issues it.
+        mNotifyMgr.notify(mNotificationId, mBuilder.build());
+
+        Log.e(TAG, "made notification");
+    }
 }
