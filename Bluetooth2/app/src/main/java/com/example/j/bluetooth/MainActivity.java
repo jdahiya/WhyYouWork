@@ -19,6 +19,7 @@ import android.bluetooth.BluetoothSocket;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
+import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
@@ -26,6 +27,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 public class MainActivity extends Activity {
+
+    private String TAG = "no_pressure";
 
     Button btnOn, btnOff;
     TextView txtArduino, txtString, txtStringLength, sensorView0, sensorView1, sensorView2, sensorView3;
@@ -44,6 +47,8 @@ public class MainActivity extends Activity {
     // String for MAC address
     private static String address;
 
+
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -56,14 +61,7 @@ public class MainActivity extends Activity {
         txtString = (TextView) findViewById(R.id.txtArduino);
 
 
-        bluetoothIn = new Handler() {
-            public void handleMessage(android.os.Message msg) {
-                if (msg.what == handlerState) {                                     //if message is what we want
-                    String readMessage = (String) msg.obj;                                                                // msg.arg1 = bytes from connect thread
-                    Toast.makeText(getBaseContext(), readMessage, Toast.LENGTH_SHORT).show();
-                }
-            }
-        };
+        bluetoothIn = new BroadcastHandler();
 
         btAdapter = BluetoothAdapter.getDefaultAdapter();       // get Bluetooth adapter
         checkBTState();
@@ -98,7 +96,7 @@ public class MainActivity extends Activity {
         Intent intent = getIntent();
 
         //Get the MAC address from the DeviceListActivty via EXTRA
-      address = "00:14:01:17:21:34";
+        address = "00:14:01:17:21:34";
 
         //create device and set the MAC address
         BluetoothDevice device = btAdapter.getRemoteDevice(address);
@@ -204,5 +202,28 @@ public class MainActivity extends Activity {
 
             }
         }
+    }
+
+    // Stuff for thresholds
+    public int pressure_threshold_count = 0;
+    private static final int PRESSURE_THRESHOLD_MAX = 20;
+
+    private class BroadcastHandler extends Handler {
+
+    public void handleMessage(android.os.Message msg) {
+        if (msg.what == handlerState) {                                     //if message is what we want
+            String readMessage = (String) msg.obj;                                                                // msg.arg1 = bytes from connect thread
+            if (!readMessage.contains("0")) {
+                pressure_threshold_count ++;
+            } else {
+                pressure_threshold_count = 0;
+                Log.e(TAG, "pressure_threshold_count reset " + readMessage);
+            }
+
+            Log.e(TAG, "msg: " + readMessage + " count: " + pressure_threshold_count);
+            if (pressure_threshold_count > PRESSURE_THRESHOLD_MAX)
+                Toast.makeText(getBaseContext(), "ALERT!", Toast.LENGTH_SHORT).show();
+        }
+    }
     }
 }
