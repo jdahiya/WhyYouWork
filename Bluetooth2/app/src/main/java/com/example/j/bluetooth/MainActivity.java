@@ -212,6 +212,7 @@ public class MainActivity extends AppCompatActivity
     private class ConnectedThread extends Thread {
         private final InputStream mmInStream;
         private final OutputStream mmOutStream;
+        private boolean keep_running = true;
 
         //creation of the connect thread
         public ConnectedThread(BluetoothSocket socket) {
@@ -231,9 +232,10 @@ public class MainActivity extends AppCompatActivity
         public void run() {
             byte[] buffer = new byte[256];
             int bytes;
+            keep_running = true;
 
             // Keep looping to listen for received messages
-            while (true) {
+            while (keep_running) {
                 try {
                     bytes = mmInStream.read(buffer);            //read bytes from input buffer
                     Log.e("Read Message", "Number "+ Integer.toString(bytes) );
@@ -254,8 +256,11 @@ public class MainActivity extends AppCompatActivity
             } catch (IOException e) {
                 //if you cannot write, close the application
                 Toast.makeText(getBaseContext(), "Connection Failure", Toast.LENGTH_LONG).show();
-                //finish();
-
+                try {
+                    mmInStream.close();
+                    mmOutStream.close();
+                } catch (IOException i){}
+                    keep_running = false;
             }
         }
     }
@@ -336,7 +341,30 @@ public class MainActivity extends AppCompatActivity
         int id = item.getItemId();
 
         if (id == R.id.nav_camera) {
-            // Handle the camera action
+            BluetoothDevice device = btAdapter.getRemoteDevice(address);
+
+            try {
+                btSocket = createBluetoothSocket(device);
+            } catch (IOException e) {
+                Toast.makeText(getBaseContext(), "Socket creation failed", Toast.LENGTH_LONG).show();
+            }
+            // Establish the Bluetooth socket connection.
+            try
+            {
+                btSocket.connect();
+            } catch (IOException e) {
+                try
+                {
+                    btSocket.close();
+                } catch (IOException e2)
+                {
+                    //insert code to deal with this
+                }
+            }
+            mConnectedThread = new ConnectedThread(btSocket);
+            mConnectedThread.start();
+            mConnectedThread.write("x");
+
         } else if (id == R.id.nav_gallery) {
 
         } else if (id == R.id.nav_slideshow) {
