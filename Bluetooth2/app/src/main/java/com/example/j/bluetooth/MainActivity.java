@@ -13,6 +13,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.UUID;
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.text.InputType;
 import android.util.Log;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
@@ -23,6 +25,7 @@ import android.os.Handler;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.Manifest;
@@ -45,6 +48,7 @@ import android.view.MenuItem;
 import android.widget.ImageView;
 import android.app.NotificationManager;
 import android.content.Context;
+import android.os.Vibrator;
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
@@ -61,7 +65,7 @@ public class MainActivity extends AppCompatActivity
 
     private ConnectedThread mConnectedThread;
 
-    // SPP UUID service - this should work for most devices
+     // SPP UUID service - this should work for most devices
     private static final UUID BTMODULEUUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
 
     // String for MAC address
@@ -72,6 +76,8 @@ public class MainActivity extends AppCompatActivity
     public static boolean BUTT_PROBLEM = false;
 
     private boolean showingFront = true;
+
+    private String phoneNumber = "7788963148";
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -171,6 +177,7 @@ public class MainActivity extends AppCompatActivity
         //I send a character when resuming.beginning transmission to check device is connected
         //If it is not an exception will be thrown in the write method and finish() will be called
         mConnectedThread.write("x");
+        setPhoneNumber();
         omgAlert();
     }
 
@@ -205,6 +212,7 @@ public class MainActivity extends AppCompatActivity
     private class ConnectedThread extends Thread {
         private final InputStream mmInStream;
         private final OutputStream mmOutStream;
+        private boolean keep_running = true;
 
         //creation of the connect thread
         public ConnectedThread(BluetoothSocket socket) {
@@ -224,9 +232,10 @@ public class MainActivity extends AppCompatActivity
         public void run() {
             byte[] buffer = new byte[256];
             int bytes;
+            keep_running = true;
 
             // Keep looping to listen for received messages
-            while (true) {
+            while (keep_running) {
                 try {
                     bytes = mmInStream.read(buffer);            //read bytes from input buffer
                     Log.e("Read Message", "Number "+ Integer.toString(bytes) );
@@ -247,8 +256,11 @@ public class MainActivity extends AppCompatActivity
             } catch (IOException e) {
                 //if you cannot write, close the application
                 Toast.makeText(getBaseContext(), "Connection Failure", Toast.LENGTH_LONG).show();
-                //finish();
-
+                try {
+                    mmInStream.close();
+                    mmOutStream.close();
+                } catch (IOException i){}
+                    keep_running = false;
             }
         }
     }
@@ -286,7 +298,7 @@ public class MainActivity extends AppCompatActivity
 
     public void sendButtSMS() {
         SmsManager sms = SmsManager.getDefault();
-        sms.sendTextMessage("7788963148", null,
+        sms.sendTextMessage(phoneNumber, null,
                 "Your patient may need to adjust the pressure on his or her buttocks.", null, null);
     }
 
@@ -329,7 +341,30 @@ public class MainActivity extends AppCompatActivity
         int id = item.getItemId();
 
         if (id == R.id.nav_camera) {
-            // Handle the camera action
+            BluetoothDevice device = btAdapter.getRemoteDevice(address);
+
+            try {
+                btSocket = createBluetoothSocket(device);
+            } catch (IOException e) {
+                Toast.makeText(getBaseContext(), "Socket creation failed", Toast.LENGTH_LONG).show();
+            }
+            // Establish the Bluetooth socket connection.
+            try
+            {
+                btSocket.connect();
+            } catch (IOException e) {
+                try
+                {
+                    btSocket.close();
+                } catch (IOException e2)
+                {
+                    //insert code to deal with this
+                }
+            }
+            mConnectedThread = new ConnectedThread(btSocket);
+            mConnectedThread.start();
+            mConnectedThread.write("x");
+
         } else if (id == R.id.nav_gallery) {
 
         } else if (id == R.id.nav_slideshow) {
@@ -375,6 +410,10 @@ public class MainActivity extends AppCompatActivity
         playSound();
         makeNotification();
         sendButtSMS();
+
+        Vibrator v = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
+        // Vibrate for 500 milliseconds
+        v.vibrate(3500);
     }
 
     private void makeNotification() {
@@ -394,5 +433,33 @@ public class MainActivity extends AppCompatActivity
         mNotifyMgr.notify(mNotificationId, mBuilder.build());
 
         Log.e(TAG, "made notification");
+    }
+
+    private void setPhoneNumber() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Set Phone Number");
+
+// Set up the input
+        final EditText input = new EditText(this);
+// Specify the type of input expected; this, for example, sets the input as a password, and will mask the text
+        input.setInputType(InputType.TYPE_CLASS_TEXT);
+        input.setText(phoneNumber);
+        builder.setView(input);
+
+// Set up the buttons
+        builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                phoneNumber = input.getText().toString();
+            }
+        });
+        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.cancel();
+            }
+        });
+
+        builder.show();
     }
 }
