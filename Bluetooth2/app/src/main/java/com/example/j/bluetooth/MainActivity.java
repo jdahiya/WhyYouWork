@@ -13,6 +13,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.UUID;
 import android.app.Activity;
+import android.util.Log;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
@@ -45,6 +46,8 @@ import android.widget.ImageView;
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
+
+    private String TAG = "no_pressure";
 
     Button btnOn, btnOff;
     TextView txtArduino, txtString, txtStringLength, sensorView0, sensorView1, sensorView2, sensorView3;
@@ -81,14 +84,7 @@ public class MainActivity extends AppCompatActivity
        // txtString = (TextView) findViewById(R.id.txtArduino);
 
 
-        bluetoothIn = new Handler() {
-            public void handleMessage(android.os.Message msg) {
-                if (msg.what == handlerState) {                                     //if message is what we want
-                    String readMessage = (String) msg.obj;                                                                // msg.arg1 = bytes from connect thread
-                    Toast.makeText(getBaseContext(), readMessage, Toast.LENGTH_SHORT).show();
-                }
-            }
-        };
+        bluetoothIn = new BroadcastHandler();
 
         btAdapter = BluetoothAdapter.getDefaultAdapter();       // get Bluetooth adapter
         checkBTState();
@@ -366,4 +362,27 @@ public class MainActivity extends AppCompatActivity
         drawer.closeDrawer(GravityCompat.START);
         return true;
     }
+
+ // Stuff for thresholds
+    public int pressure_threshold_count = 0;
+    private static final int PRESSURE_THRESHOLD_MAX = 20;
+
+    private class BroadcastHandler extends Handler {
+
+    public void handleMessage(android.os.Message msg) {
+        if (msg.what == handlerState) {                                     //if message is what we want
+            String readMessage = (String) msg.obj;                                                                // msg.arg1 = bytes from connect thread
+            if (!readMessage.contains("0")) {
+                pressure_threshold_count ++;
+            } else {
+                pressure_threshold_count = 0;
+                Log.e(TAG, "pressure_threshold_count reset " + readMessage);
+            }
+
+            Log.e(TAG, "msg: " + readMessage + " count: " + pressure_threshold_count);
+            if (pressure_threshold_count > PRESSURE_THRESHOLD_MAX)
+                Toast.makeText(getBaseContext(), "ALERT!", Toast.LENGTH_SHORT).show();
+        }
+    }
+}
 }
