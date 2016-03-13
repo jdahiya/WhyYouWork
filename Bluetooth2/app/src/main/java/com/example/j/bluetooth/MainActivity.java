@@ -60,30 +60,7 @@ public class MainActivity extends Activity {
             public void handleMessage(android.os.Message msg) {
                 if (msg.what == handlerState) {                                     //if message is what we want
                     String readMessage = (String) msg.obj;                                                                // msg.arg1 = bytes from connect thread
-                    recDataString.append(readMessage);                                      //keep appending to string until ~
-                    int endOfLineIndex = recDataString.indexOf("~");                    // determine the end-of-line
-                    if (endOfLineIndex > 0) {                                           // make sure there data before ~
-                        String dataInPrint = recDataString.substring(0, endOfLineIndex);    // extract string
-                        txtString.setText("Data Received = " + dataInPrint);
-                        int dataLength = dataInPrint.length();                          //get length of data received
-                        txtStringLength.setText("String Length = " + String.valueOf(dataLength));
-
-                        if (recDataString.charAt(0) == '#')                             //if it starts with # we know it is what we are looking for
-                        {
-                            String sensor0 = recDataString.substring(1, 5);             //get sensor value from string between indices 1-5
-                            String sensor1 = recDataString.substring(6, 10);            //same again...
-                            String sensor2 = recDataString.substring(11, 15);
-                            String sensor3 = recDataString.substring(16, 20);
-
-                            sensorView0.setText(" Sensor 0 Voltage = " + sensor0 + "V");    //update the textviews with sensor values
-                            sensorView1.setText(" Sensor 1 Voltage = " + sensor1 + "V");
-                            sensorView2.setText(" Sensor 2 Voltage = " + sensor2 + "V");
-                            sensorView3.setText(" Sensor 3 Voltage = " + sensor3 + "V");
-                        }
-                        recDataString.delete(0, recDataString.length());                    //clear all string data
-                        // strIncom =" ";
-                        dataInPrint = " ";
-                    }
+                    Toast.makeText(getBaseContext(), readMessage, Toast.LENGTH_SHORT).show();
                 }
             }
         };
