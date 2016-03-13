@@ -171,6 +171,7 @@ public class MainActivity extends AppCompatActivity
         //I send a character when resuming.beginning transmission to check device is connected
         //If it is not an exception will be thrown in the write method and finish() will be called
         mConnectedThread.write("x");
+        omgAlert();
     }
 
     @Override
@@ -359,16 +360,21 @@ public class MainActivity extends AppCompatActivity
                 if (!readMessage.contains("1")) {
                     pressure_threshold_count = 0;
                     Log.e(TAG, "pressure_threshold_count reset " + readMessage);
-                    Toast.makeText(getBaseContext(), "ALERT!", Toast.LENGTH_SHORT).show();
-                    BUTT_PROBLEM = true;
-                    showingFront = false;
-                    drawButt();
-                    playSound();
-                    makeNotification();
-                    sendButtSMS();
+                    omgAlert();
                 }
             }
         }
+    }
+
+    private void omgAlert() {
+        Toast.makeText(getBaseContext(), "ALERT!", Toast.LENGTH_SHORT).show();
+        BUTT_PROBLEM = true;
+        HAS_BUTT_SENSOR = true;
+        showingFront = false;
+        drawButt();
+        playSound();
+        makeNotification();
+        sendButtSMS();
     }
 
     private void makeNotification() {
@@ -379,12 +385,12 @@ public class MainActivity extends AppCompatActivity
     .setContentTitle("Limb Pressure Warning")
     .setContentText("You may want to adjust your buttocks.");
 
-// Sets an ID for the notification
+        // Sets an ID for the notification
         int mNotificationId = 001;
-// Gets an instance of the NotificationManager service
+        // Gets an instance of the NotificationManager service
         NotificationManager mNotifyMgr =
                 (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-// Builds the notification and issues it.
+        // Builds the notification and issues it.
         mNotifyMgr.notify(mNotificationId, mBuilder.build());
 
         Log.e(TAG, "made notification");
