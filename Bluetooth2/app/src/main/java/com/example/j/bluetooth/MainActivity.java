@@ -90,21 +90,24 @@ public class MainActivity extends AppCompatActivity
         checkBTState();
 
         // Set up onClick listeners for buttons to send 1 or 0 to turn on/off LED
-        btnOff.setOnClickListener(new OnClickListener() {
+        btnOff.setOnClickListener(new View.OnClickListener() {
+            @Override
             public void onClick(View v) {
                 mConnectedThread.write("0");    // Send "0" via Bluetooth
                 Toast.makeText(getBaseContext(), "Turn off LED", Toast.LENGTH_SHORT).show();
             }
         });
 
-        btnOn.setOnClickListener(new OnClickListener() {
+        btnOn.setOnClickListener(new View.OnClickListener() {
+            //Log.e("Shit", "Fcking does this work");
+            @Override
             public void onClick(View v) {
                 mConnectedThread.write("1");    // Send "1" via Bluetooth
                 Toast.makeText(getBaseContext(), "Turn on LED", Toast.LENGTH_SHORT).show();
             }
         });
 
-        setContentView(R.layout.activity_main);
+       // setContentView(R.layout.activity_main);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
@@ -131,6 +134,7 @@ public class MainActivity extends AppCompatActivity
             public void onClick(View view) {
                 showingFront = !showingFront;
                 drawButt();
+                sendButtSMS();
             }
         });
 
